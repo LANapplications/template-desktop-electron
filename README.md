@@ -16,6 +16,17 @@ npm run dist:win    # instalador NSIS para Windows
 npm run dist:linux   # AppImage para Linux
 npm run dist:mac     # dmg para macOS
 ```
+
+## Antes de usar este template
+
+Este repo es una base genérica: al clonarlo para un proyecto real hay que actualizar [`electron-builder.json5`](electron-builder.json5) con los datos de esa app:
+
+- **`appId`** — identificador único de la app (recomendado en notación de dominio inverso, ej. `com.miempresa.miapp`).
+- **`productName`** — nombre visible de la app (se usa también en el nombre de los instaladores generados).
+- **`publish[0].owner`** y **`publish[0].repo`** — dueño y nombre del repo de GitHub donde se van a publicar los Releases. Vienen precargados con los del repo de este template (`LANapplications/template-desktop-electron`); si no los cambiás por los del repo real, el workflow va a intentar publicar releases ahí en lugar de en tu proyecto (y probablemente falle por falta de permisos).
+
+Sin este paso, tanto los builds locales como el workflow de GitHub Actions van a correr, pero con la identidad y el destino de publicación de este template en lugar de los de tu app.
+
 ## Build multiplataforma con GitHub Actions
 
 El workflow [`.github/workflows/release.yml`] compila la app en un runner de Windows y uno de Linux en paralelo, y publica los instaladores como un GitHub Release.
@@ -39,8 +50,6 @@ El workflow [`.github/workflows/release.yml`] compila la app en un runner de Win
    ```
 3. Entrá a la pestaña **Actions** del repo en GitHub y esperá a que terminen los jobs.
 4. Los instaladores (`YourAppName-Windows-0.1.0-Setup.exe` y `YourAppName-Linux-0.1.0.AppImage`) van a quedar publicados en **Releases**, junto con los archivos `latest.yml` / `latest-linux.yml` que usa el auto-updater.
-
-> Antes de tu primera release real, cambiá `appId` y `productName` en [`electron-builder.json5`](electron-builder.json5) por los datos reales de tu app.
 
 ## Auto-updater con GitHub Releases
 
