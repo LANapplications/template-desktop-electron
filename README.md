@@ -34,10 +34,15 @@ El workflow [`.github/workflows/release.yml`] compila la app en un runner de Win
 ### Cómo funciona
 
 - Se dispara con cada push a `main` que modifique `package.json` (o manualmente desde la pestaña Actions con "Run workflow").
-- Un job previo (`check-version`) lee la versión de `package.json` y chequea con la GitHub CLI si ya existe un Release con ese tag (`vX.Y.Z`). Si ya existe, el build se salta — así un push a `main` sin bump de versión no rompe nada ni re-publica de más.
-- Si la versión es nueva, corre la matriz de 2 jobs:
-  - `windows-latest` → `electron-builder --win`
-  - `ubuntu-latest` → `electron-builder --linux`
+- Job `check-version`: lee la versión de `package.json` y chequea con la GitHub CLI si ya existe un Release con ese tag (`vX.Y.Z`). Si ya existe, el resto se salta — así un push a `main` sin bump de versión no rompe nada ni re-publica de más.
+- Job `build` (matriz, si la versión es nueva):
+  - `windows-latest` → `electron-builder --win --publish never`
+  - `ubuntu-latest` → `electron-builder --linux --publish never`
+
+  Cada uno sube sus instaladores y `.yml` como artifacts de GitHub Actions, **sin publicar todavía**.
+- Job `publish` (corre una sola vez, después de que terminen los dos builds): descarga esos artifacts y crea el GitHub Release con todos los archivos juntos, usando [`softprops/action-gh-release`](https://github.com/softprops/action-gh-release).
+
+> ¿Por qué no publicar directo desde cada job de la matriz? `electron-builder` sube el Release como *draft* mientras dura la subida y recién lo despublica al terminar. Con dos runners escribiendo al mismo Release al mismo tiempo, se pisan entre sí y el Release puede quedar trabado en draft para siempre (por eso "Releases" aparecía vacío la primera vez). Separar build y publish en jobs distintos evita esa condición de carrera.
 
 ### Pasos para generar una release
 

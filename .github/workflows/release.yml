@@ -16,6 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       should-release: ${{ steps.check.outputs.exists == 'false' }}
+      version: ${{ steps.version.outputs.value }}
     steps:
       - uses: actions/checkout@v4
 
@@ -32,7 +33,7 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
-  release:
+  build:
     needs: check-version
     if: needs.check-version.outputs.should-release == 'true'
     strategy:
@@ -57,7 +58,32 @@ jobs:
 
       - run: npm run build
 
-      - name: Build & publish
+      # --publish never: solo genera los instaladores y los .yml de auto-update
+      # localmente. La publicación a GitHub la hace un único job al final,
+      # para evitar que los dos runners escriban al mismo Release a la vez.
+      - run: npx electron-builder ${{ matrix.flag }} --publish never
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.os }}
+          path: |
+            release/*.exe
+            release/*.AppImage
+            release/*.yml
+          if-no-files-found: error
+
+  publish:
+    needs: [check-version, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.check-version.outputs.version }}
+          files: artifacts/*
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder ${{ matrix.flag }} --publish always
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
