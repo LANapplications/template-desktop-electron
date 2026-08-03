@@ -9,14 +9,6 @@ npm install
 npm run dev
 ```
 
-## Builds locales
-
-```bash
-npm run dist:win    # instalador NSIS para Windows
-npm run dist:linux   # AppImage para Linux
-npm run dist:mac     # dmg para macOS
-```
-
 ## Antes de usar este template
 
 Este repo es una base genérica: al clonarlo para un proyecto real hay que actualizar [`electron-builder.json5`](electron-builder.json5) con los datos de esa app:
@@ -30,19 +22,6 @@ Sin este paso, tanto los builds locales como el workflow de GitHub Actions van a
 ## Build multiplataforma con GitHub Actions
 
 El workflow [`.github/workflows/release.yml`] compila la app en un runner de Windows y uno de Linux en paralelo, y publica los instaladores como un GitHub Release.
-
-### Cómo funciona
-
-- Se dispara con cada push a `main` que modifique `package.json` (o manualmente desde la pestaña Actions con "Run workflow").
-- Job `check-version`: lee la versión de `package.json` y chequea con la GitHub CLI si ya existe un Release con ese tag (`vX.Y.Z`). Si ya existe, el resto se salta — así un push a `main` sin bump de versión no rompe nada ni re-publica de más.
-- Job `build` (matriz, si la versión es nueva):
-  - `windows-latest` → `electron-builder --win --publish never`
-  - `ubuntu-latest` → `electron-builder --linux --publish never`
-
-  Cada uno sube sus instaladores y `.yml` como artifacts de GitHub Actions, **sin publicar todavía**.
-- Job `publish` (corre una sola vez, después de que terminen los dos builds): descarga esos artifacts y crea el GitHub Release con todos los archivos juntos, usando [`softprops/action-gh-release`](https://github.com/softprops/action-gh-release).
-
-> ¿Por qué no publicar directo desde cada job de la matriz? `electron-builder` sube el Release como *draft* mientras dura la subida y recién lo despublica al terminar. Con dos runners escribiendo al mismo Release al mismo tiempo, se pisan entre sí y el Release puede quedar trabado en draft para siempre (por eso "Releases" aparecía vacío la primera vez). Separar build y publish en jobs distintos evita esa condición de carrera.
 
 ### Pasos para generar una release
 
@@ -59,5 +38,22 @@ El workflow [`.github/workflows/release.yml`] compila la app en un runner de Win
 ## Auto-updater con GitHub Releases
 
 - **macOS:** si en algún momento sumás esa build, tené en cuenta que Squirrel.Mac (el mecanismo que usa `electron-updater` ahí) sí exige que la app esté firmada y notarizada — sin eso el auto-update no funciona en Mac.
-- El repo tiene que ser público para que los Releases sean legibles sin autenticación desde la app instalada. Si fuera privado, habría que incluir un token en el cliente, algo que no se recomienda.
+- El repo tiene que ser PÚBLICO para que los Releases sean legibles sin autenticación desde la app instalada.
 - Cada vez que subís la versión en `package.json` y pusheás a `main`, se genera una release nueva: `electron-updater` decide que hay una actualización disponible comparando esa versión contra la ya instalada.
+
+### Si el día de mañana el repo pasa a ser privado
+
+Este template queda con el repo público, pero si en un proyecto real necesitás mantener el código privado, el auto-updater igual puede funcionar. Opciones:
+
+1. **Repo de releases separado y público.** El código fuente queda en el repo privado; un segundo repo, vacío y público, se usa solo para publicar Releases. `electron-updater` apunta ahí (`publish.owner`/`publish.repo` en `electron-builder.json5`) y no necesita ningún token embebido porque ese repo es público. El workflow de CI sí necesita un Personal Access Token con permiso sobre ese repo (el `GITHUB_TOKEN` automático no alcanza para publicar en un repo distinto al que corre el workflow).
+2. **Hosting propio, provider `generic`.** En vez de GitHub, `electron-updater` busca las actualizaciones en una URL que vos controlás:
+
+   ```json5
+   "publish": [
+     { "provider": "generic", "url": "https://tusitio.com/updates/" }
+   ]
+   ```
+
+   Ahí hay que subir, en una misma carpeta plana (sin subcarpetas por plataforma):
+   - `latest.yml` (Windows) y `latest-linux.yml` (Linux) — los manifiestos que `electron-updater` lee primero (versión, nombre de archivo, hash, fecha). Sin esto no detecta que hay una versión nueva.
+   - Los instaladores (`.exe`, `.AppImage`) con el mismo nombre que aparece dentro de esos `.yml`.
