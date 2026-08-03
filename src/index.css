@@ -1,0 +1,9 @@
+@import "tailwindcss";
+@import "./theme.css";
+
+@layer base {
+  body {
+    @apply bg-background text-foreground min-h-screen;
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  }
+}
