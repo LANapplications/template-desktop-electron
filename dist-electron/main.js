@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
-import require$$1$4, { dialog, BrowserWindow, Menu, app } from "electron";
+import require$$1$4, { dialog, BrowserWindow, Menu, app, ipcMain } from "electron";
 import { fileURLToPath } from "node:url";
 import path$n from "node:path";
 import require$$1 from "path";
@@ -19,6 +19,7 @@ import require$$0$6 from "crypto";
 import require$$1$5 from "tty";
 import require$$2 from "url";
 import require$$14 from "zlib";
+import Database from "better-sqlite3";
 const __dirname$1 = path$n.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path$n.join(__dirname$1, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
@@ -17523,9 +17524,119 @@ function createWindow() {
   Menu.setApplicationMenu(null);
   return win;
 }
+const CLIENT_TABLE = `
+  CREATE TABLE IF NOT EXISTS clients (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    name      TEXT NOT NULL,
+    email     TEXT NOT NULL UNIQUE,
+    createdAt TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+`;
+const migrations = [
+  {
+    name: "create_client_table",
+    up: (db2) => db2.exec(CLIENT_TABLE)
+  }
+  // Ejemplo para el futuro:
+  // {
+  //   name: "add_phone_to_client",
+  //   up: (db) => db.exec(`ALTER TABLE clients ADD COLUMN phone TEXT`),
+  // },
+];
+function runMigrations(db2) {
+  const applied = db2.pragma("user_version", { simple: true });
+  for (let version = applied; version < migrations.length; version++) {
+    const migration = migrations[version];
+    const run = db2.transaction(() => {
+      migration.up(db2);
+      db2.pragma(`user_version = ${version + 1}`);
+    });
+    run();
+    console.log(`[db] migración aplicada: ${migration.name}`);
+  }
+}
+let db = null;
+function getDatabase() {
+  if (db) return db;
+  const dbPath = path$n.join(app.getPath("userData"), "app.db");
+  db = new Database(dbPath);
+  db.pragma("journal_mode = WAL");
+  db.pragma("foreign_keys = ON");
+  runMigrations(db);
+  return db;
+}
+function closeDatabase() {
+  db == null ? void 0 : db.close();
+  db = null;
+}
+const clientRepository = {
+  findAll() {
+    return getDatabase().prepare("SELECT * FROM clients ORDER BY id DESC").all();
+  },
+  findById(id) {
+    return getDatabase().prepare("SELECT * FROM clients WHERE id = ?").get(id);
+  },
+  create(data) {
+    const info = getDatabase().prepare("INSERT INTO clients (name, email) VALUES (@name, @email)").run(data);
+    return this.findById(Number(info.lastInsertRowid));
+  },
+  update(id, data) {
+    const current = this.findById(id);
+    if (!current) return void 0;
+    const merged = { ...current, ...data };
+    getDatabase().prepare("UPDATE clients SET name = @name, email = @email WHERE id = @id").run({ name: merged.name, email: merged.email, id });
+    return this.findById(id);
+  },
+  remove(id) {
+    const info = getDatabase().prepare("DELETE FROM clients WHERE id = ?").run(id);
+    return info.changes > 0;
+  }
+};
+const clientService = {
+  getClients() {
+    return clientRepository.findAll();
+  },
+  getClient(id) {
+    return clientRepository.findById(id);
+  },
+  createClient(data) {
+    var _a, _b;
+    const name = (_a = data.name) == null ? void 0 : _a.trim();
+    const email = (_b = data.email) == null ? void 0 : _b.trim();
+    if (!name) throw new Error("El nombre es obligatorio");
+    if (!email) throw new Error("El email es obligatorio");
+    return clientRepository.create({ name, email });
+  },
+  updateClient(id, data) {
+    return clientRepository.update(id, data);
+  },
+  deleteClient(id) {
+    return clientRepository.remove(id);
+  }
+};
+function registerClientIPC() {
+  ipcMain.handle("getClients", () => clientService.getClients());
+  ipcMain.handle(
+    "getClient",
+    (_event, id) => clientService.getClient(id)
+  );
+  ipcMain.handle(
+    "createClient",
+    (_event, data) => clientService.createClient(data)
+  );
+  ipcMain.handle(
+    "updateClient",
+    (_event, id, data) => clientService.updateClient(id, data)
+  );
+  ipcMain.handle(
+    "deleteClient",
+    (_event, id) => clientService.deleteClient(id)
+  );
+}
 setupLogger();
 setupUpdater();
 app.whenReady().then(() => {
+  registerClientIPC();
   createWindow();
   if (app.isPackaged) {
     checkForUpdates();
@@ -17535,6 +17646,9 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
   }
+});
+app.on("before-quit", () => {
+  closeDatabase();
 });
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
