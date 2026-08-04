@@ -57,7 +57,17 @@ jobs:
 
       - run: npm ci
 
+      # Estos valores (públicos, no secretos) se hornean en el bundle del main.
+      # Definilos en: repo → Settings → Secrets and variables → Actions → Variables.
       - run: npm run build
+        env:
+          API_URL: ${{ vars.API_URL }}
+          AUTH0_DOMAIN: ${{ vars.AUTH0_DOMAIN }}
+          AUTH0_CLIENT_ID: ${{ vars.AUTH0_CLIENT_ID }}
+          AUTH0_AUDIENCE: ${{ vars.AUTH0_AUDIENCE }}
+          AUTH0_SCOPE: ${{ vars.AUTH0_SCOPE }}
+          AUTH0_PROMPT: ${{ vars.AUTH0_PROMPT }}
+          AUTH0_CALLBACK_URL: ${{ vars.AUTH0_CALLBACK_URL }}
 
       # --publish never: solo genera los instaladores y los .yml de auto-update
       # localmente. La publicación a GitHub la hace un único job al final,
