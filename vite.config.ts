@@ -12,13 +12,6 @@ export default defineConfig({
     electron({
       main: {
         entry: 'electron/main.ts',
-        vite: {
-          build: {
-            rollupOptions: {
-              external: ['better-sqlite3'], //Si no lo usamos borramos esta línea
-            },
-          },
-        },
       },
 
       preload: {

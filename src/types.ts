@@ -1,16 +1,25 @@
 // Tipos compartidos del lado del renderer.
-// Reflejan lo que devuelve la base de datos (electron/database/tables.ts).
+// Reflejan el contrato del backend (template-back-express-mongo).
 
 
 export type ClientType = {
-  id: number;
+  id: string;
   name: string;
-  email: string;
-  createdAt: string;
+  description?: string;
 };
 
 
-export type NewClientType = Omit<ClientType, "id" | "createdAt">;
+export type NewClientType = {
+  name: string;
+  description?: string;
+};
 
 
 export type UpdateClientType = Partial<NewClientType>;
+
+
+export type User = {
+  id: string;
+  role: string;
+  email?: string;
+};

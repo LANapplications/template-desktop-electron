@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { ClientType } from "../types";
-import { getClients, createClient, deleteClient } from "../api/client";
+import { getClients, createClient, deleteClient } from "../ipc/client";
+import { cleanIpcError } from "../ipc/error";
 
 export function Home() {
   const [clients, setClients] = useState<ClientType[]>([]);
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [description, setDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  // Trae la lista desde la base de datos (main process) al montar.
+  // Trae la lista desde el backend (vía main process) al montar.
   async function loadClients() {
     setClients(await getClients());
   }
@@ -21,17 +22,17 @@ export function Home() {
     e.preventDefault();
     setError(null);
     try {
-      await createClient({ name, email });
+      await createClient({ name, description });
       setName("");
-      setEmail("");
+      setDescription("");
       await loadClients();
     } catch (err) {
-      // El service tira Error si falta algo; acá lo mostramos.
-      setError(err instanceof Error ? err.message : "Error al crear cliente");
+      // El backend tira Error si algo falla; acá lo mostramos limpio.
+      setError(cleanIpcError(err, "Error al crear cliente"));
     }
   }
 
-  async function handleDelete(id: number) {
+  async function handleDelete(id: string) {
     await deleteClient(id);
     await loadClients();
   }
@@ -48,9 +49,9 @@ export function Home() {
           className="rounded-lg border border-border px-3 py-2"
         />
         <input
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Descripción"
           className="rounded-lg border border-border px-3 py-2"
         />
         <button
@@ -73,7 +74,9 @@ export function Home() {
           >
             <div className="flex flex-col">
               <span className="font-medium">{client.name}</span>
-              <span className="text-sm opacity-60">{client.email}</span>
+              {client.description && (
+                <span className="text-sm opacity-60">{client.description}</span>
+              )}
             </div>
             <button
               onClick={() => handleDelete(client.id)}

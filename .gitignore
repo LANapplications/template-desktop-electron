@@ -9,9 +9,15 @@ lerna-debug.log*
 
 node_modules
 dist
+dist-electron
 dist-ssr
 release
 *.local
+
+# Variables de entorno (Auth0, API)
+.env
+.env.*
+!.env.example
 
 # Editor directories and files
 .vscode/*

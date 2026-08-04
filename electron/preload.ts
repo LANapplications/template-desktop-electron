@@ -22,3 +22,13 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
   // You can expose other APTs you need here.
   // ...
 })
+
+// --------- Auth0: puente seguro hacia el proceso main ---------
+// El renderer solo dispara acciones; los tokens nunca cruzan este puente.
+contextBridge.exposeInMainWorld('auth', {
+  login: () => ipcRenderer.invoke('auth:login'),
+  register: () => ipcRenderer.invoke('auth:register'),
+  logout: () => ipcRenderer.invoke('auth:logout'),
+  getUser: () => ipcRenderer.invoke('auth:getUser'),
+  isAuthenticated: () => ipcRenderer.invoke('auth:isAuthenticated'),
+})

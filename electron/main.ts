@@ -15,11 +15,8 @@ import { createWindow } from "./window/createWindow";
 
 
 // ipc
+import { registerAuthIPC } from "./ipc/authIPC";
 import { registerClientIPC } from "./ipc/clientIPC";
-
-
-// database
-import { closeDatabase } from "./database/database";
 
 
 setupLogger();  //quitar si no se quiere loggear en un archivo
@@ -27,7 +24,8 @@ setupUpdater(); //quitar si no se quiere usar el autoUpdate
 
 
 app.whenReady().then(() => {
-  registerClientIPC(); //registra los handlers IPC de Client (CRUD)
+  registerAuthIPC();   //registra los handlers IPC de Auth0 (login/register/logout)
+  registerClientIPC(); //registra los handlers IPC de Client (CRUD contra el backend)
   createWindow();
   if (app.isPackaged) {
     checkForUpdates();
@@ -39,11 +37,6 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
   }
-});
-
-
-app.on("before-quit", () => {
-  closeDatabase();
 });
 
 

@@ -6,8 +6,43 @@ App de escritorio con Electron.
 
 ```bash
 npm install
+cp .env.example .env   # completar con tus datos de Auth0 y del backend
 npm run dev
 ```
+
+### Configurar Auth0 (para una app de escritorio)
+
+Se usa una app de tipo **Native** con **Authorization Code + PKCE**. El login se
+abre en el **navegador del sistema** (así reusa las sesiones de Google/Auth0 que
+el usuario ya tiene abiertas: si elige una cuenta logueada, entra directo, sin
+tipear la contraseña). Cuando Auth0 redirige de vuelta, la app lo recibe en un
+**servidor loopback temporal** (`http://127.0.0.1:41730/callback`) que se levanta
+solo durante el login y se cierra al terminar.
+
+Pasos en el [dashboard de Auth0](https://manage.auth0.com):
+
+1. **Applications → Create Application → Native.** Anotá el **Domain** y el
+   **Client ID**.
+2. En la pestaña **Settings** de esa app:
+   - **Allowed Callback URLs:** `http://127.0.0.1:41730/callback` (mismo valor que
+     `AUTH0_CALLBACK_URL` del `.env`, con el mismo puerto).
+3. **APIs:** usá la misma **API** (mismo *Identifier* / `audience`) que valida el
+   backend. Si todavía no existe, creala en **APIs → Create API** (el *Identifier*
+   es un string cualquiera, no hace falta que sea una URL real).
+4. **Autorizá la app contra la API.** Este tenant exige un *grant* explícito
+   entre el client y la API (si no, el login falla con *"Client is not authorized
+   to access resource server"* aunque el `audience` esté bien). Andá a
+   **Applications → tu app Native → pestaña APIs**, abrí **tu API** y, en la
+   solapa **User-Delegated Access**, tildá **Always grant all permissions** y hacé
+   clic en **Grant Access → Save**.
+5. **Refresh tokens:** en la app Native, en **Settings → Advanced → Grant Types**
+   verificá que estén tildados *Authorization Code* y *Refresh Token*; y en la
+   **API**, activá *Allow Offline Access*. Esto es lo que hace que la sesión
+   persista al cerrar y reabrir la app (el scope `offline_access`).
+6. Copiá `Domain`, `Client ID` y `audience` al `.env` (ver `.env.example`).
+
+> El backend tiene que apuntar al **mismo** `AUTH0_DOMAIN` y `AUTH0_AUDIENCE`,
+> porque valida los tokens que emite este mismo tenant.
 
 ## Antes de usar este template
 

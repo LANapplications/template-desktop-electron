@@ -1,15 +1,12 @@
 import { ClientType, NewClientType, UpdateClientType } from "../types";
 
 
+// Estas funciones solo cruzan el puente IPC hacia el proceso main, que a su vez
+// pega al backend. El renderer no conoce URLs ni tokens.
+
+
 export const getClients = async (): Promise<ClientType[]> => {
   return await window.ipcRenderer.invoke("getClients");
-};
-
-
-export const getClient = async (
-  id: number
-): Promise<ClientType | undefined> => {
-  return await window.ipcRenderer.invoke("getClient", id);
 };
 
 
@@ -21,13 +18,13 @@ export const createClient = async (
 
 
 export const updateClient = async (
-  id: number,
+  id: string,
   data: UpdateClientType
-): Promise<ClientType | undefined> => {
+): Promise<ClientType> => {
   return await window.ipcRenderer.invoke("updateClient", id, data);
 };
 
 
-export const deleteClient = async (id: number): Promise<boolean> => {
+export const deleteClient = async (id: string): Promise<boolean> => {
   return await window.ipcRenderer.invoke("deleteClient", id);
 };

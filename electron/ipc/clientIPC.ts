@@ -1,24 +1,20 @@
 import { ipcMain } from "electron";
-import { clientService } from "../service/clientService";
-import type { NewClient, UpdateClient } from "../database/tables";
+import { clientApi } from "../api/clientApi";
+import type { NewClient, UpdateClient } from "../types";
 
 
 export function registerClientIPC(): void {
-  ipcMain.handle("getClients", () => clientService.getClients());
-
-  ipcMain.handle("getClient", (_event, id: number) =>
-    clientService.getClient(id)
-  );
+  ipcMain.handle("getClients", () => clientApi.findAll());
 
   ipcMain.handle("createClient", (_event, data: NewClient) =>
-    clientService.createClient(data)
+    clientApi.create(data)
   );
 
-  ipcMain.handle("updateClient", (_event, id: number, data: UpdateClient) =>
-    clientService.updateClient(id, data)
+  ipcMain.handle("updateClient", (_event, id: string, data: UpdateClient) =>
+    clientApi.update(id, data)
   );
 
-  ipcMain.handle("deleteClient", (_event, id: number) =>
-    clientService.deleteClient(id)
+  ipcMain.handle("deleteClient", (_event, id: string) =>
+    clientApi.remove(id)
   );
 }
