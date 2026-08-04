@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - with-back
     paths:
       - "package.json"
   workflow_dispatch:
