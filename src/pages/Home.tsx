@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ClientType } from "../types";
-import { getClients, createClient, deleteClient } from "../api/client";
+import { getClients, createClient, deleteClient } from "../ipc/client";
 
 export function Home() {
   const [clients, setClients] = useState<ClientType[]>([]);
