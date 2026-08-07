@@ -26,14 +26,15 @@ El workflow [`.github/workflows/release.yml`] compila la app en un runner de Win
 ### Pasos para generar una release
 
 1. Actualizá la versión en `package.json` (ej. `"version": "0.1.0"`).
-2. Commiteá y pusheá a `main`:
+2. Variables de entorno: En Github anda a Settings del repo, secrets and variables - Actions y agregalas como Variables.
+3. Commiteá y pusheá a `main`:
    ```bash
    git add package.json
    git commit -m "Bump version to 0.1.0"
    git push origin main
    ```
-3. Entrá a la pestaña **Actions** del repo en GitHub y esperá a que terminen los jobs.
-4. Los instaladores (`YourAppName-Windows-0.1.0-Setup.exe` y `YourAppName-Linux-0.1.0.AppImage`) van a quedar publicados en **Releases**, junto con los archivos `latest.yml` / `latest-linux.yml` que usa el auto-updater.
+4. Entrá a la pestaña **Actions** del repo en GitHub y esperá a que terminen los jobs.
+5. Los instaladores (`YourAppName-Windows-0.1.0-Setup.exe` y `YourAppName-Linux-0.1.0.AppImage`) van a quedar publicados en **Releases**, junto con los archivos `latest.yml` / `latest-linux.yml` que usa el auto-updater.
 
 ## Auto-updater con GitHub Releases
 
