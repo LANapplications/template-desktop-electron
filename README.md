@@ -26,7 +26,7 @@ El workflow [`.github/workflows/release.yml`] compila la app en un runner de Win
 ### Pasos para generar una release
 
 1. Actualizá la versión en `package.json` (ej. `"version": "0.1.0"`).
-2. Variables de entorno: En Github anda a Settings del repo, secrets and variables - Actions y agregalas como Variables.
+2. Variables de entorno: En Github anda a Settings del repo, secrets and variables - Actions y agregalas como Variables (Repository variables).
 3. Commiteá y pusheá a `main`:
    ```bash
    git add package.json
